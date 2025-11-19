@@ -1,12 +1,74 @@
 import { DataSource } from 'typeorm'
 import { User } from '../../users/entities/user.entity'
+import { Clinic } from '../../clinics/entities/clinic.entity'
 import { UserRole } from '../../common/enums/user-role.enum'
 import * as bcrypt from 'bcryptjs'
 
 export async function seedDatabase(dataSource: DataSource) {
   const userRepository = dataSource.getRepository(User)
+  const clinicRepository = dataSource.getRepository(Clinic)
 
   console.log('🌱 Starting database seeding...')
+
+  // Create Clinics
+  console.log('')
+  console.log('🏥 Creating clinics...')
+
+  // Bakshiganj Clinic
+  let bakshiganjClinic = await clinicRepository.findOne({
+    where: { name: 'Sakura Healthcare - Bakshiganj' },
+  })
+
+  if (!bakshiganjClinic) {
+    bakshiganjClinic = clinicRepository.create({
+      name: 'Sakura Healthcare - Bakshiganj',
+      address: 'Bakshiganj, Jamalpur',
+      phone: '+8801234567891',
+      email: 'bakshiganj@sakura.com',
+      description: 'Main clinic location in Bakshiganj, Jamalpur. Providing comprehensive ENT care services.',
+      operatingHours: {
+        monday: { open: '09:00', close: '17:00', closed: false },
+        tuesday: { open: '09:00', close: '17:00', closed: false },
+        wednesday: { open: '09:00', close: '17:00', closed: false },
+        thursday: { open: '09:00', close: '17:00', closed: false },
+        friday: { open: '09:00', close: '17:00', closed: false },
+        saturday: { open: '09:00', close: '13:00', closed: false },
+        sunday: { open: '09:00', close: '13:00', closed: false },
+      },
+    })
+    await clinicRepository.save(bakshiganjClinic)
+    console.log('✅ Bakshiganj clinic created')
+  } else {
+    console.log('ℹ️  Bakshiganj clinic already exists')
+  }
+
+  // Sherpur Clinic
+  let sherpurClinic = await clinicRepository.findOne({
+    where: { name: 'Sakura Healthcare - Sherpur' },
+  })
+
+  if (!sherpurClinic) {
+    sherpurClinic = clinicRepository.create({
+      name: 'Sakura Healthcare - Sherpur',
+      address: 'Sherpur, Jamalpur',
+      phone: '+8801234567892',
+      email: 'sherpur@sakura.com',
+      description: 'Branch clinic in Sherpur, Jamalpur. Providing comprehensive ENT care services.',
+      operatingHours: {
+        monday: { open: '09:00', close: '17:00', closed: false },
+        tuesday: { open: '09:00', close: '17:00', closed: false },
+        wednesday: { open: '09:00', close: '17:00', closed: false },
+        thursday: { open: '09:00', close: '17:00', closed: false },
+        friday: { open: '09:00', close: '17:00', closed: false },
+        saturday: { open: '09:00', close: '13:00', closed: false },
+        sunday: { open: '09:00', close: '13:00', closed: false },
+      },
+    })
+    await clinicRepository.save(sherpurClinic)
+    console.log('✅ Sherpur clinic created')
+  } else {
+    console.log('ℹ️  Sherpur clinic already exists')
+  }
 
   // Check if admin already exists
   const existingAdmin = await userRepository.findOne({

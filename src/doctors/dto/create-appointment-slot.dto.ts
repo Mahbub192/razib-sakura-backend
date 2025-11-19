@@ -46,9 +46,11 @@ export class CreateAppointmentSlotDto {
     description: 'Clinic ID where the slot is available',
     example: 'clinic-uuid-789',
     type: String,
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  clinicId: string
+  clinicId?: string
 
   @ApiProperty({
     description: 'Associated resources (rooms, equipment, etc.)',

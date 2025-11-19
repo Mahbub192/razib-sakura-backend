@@ -282,13 +282,13 @@ export class AssistantsService {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // Get today's appointments for the assistant's clinic
+    // Get today's appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
-    const todayAppointments = clinicAppointments.filter((apt) => {
+    const todayAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       aptDate.setHours(0, 0, 0, 0)
       return aptDate.getTime() === today.getTime()
@@ -297,7 +297,7 @@ export class AssistantsService {
     // Get weekly appointments (last 7 days)
     const weekStart = new Date(today)
     weekStart.setDate(weekStart.getDate() - 7)
-    const weeklyAppointments = clinicAppointments.filter((apt) => {
+    const weeklyAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= weekStart && aptDate < tomorrow
     })
@@ -333,7 +333,7 @@ export class AssistantsService {
     ).length
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayAppointments = clinicAppointments.filter((apt) => {
+    const yesterdayAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       aptDate.setHours(0, 0, 0, 0)
       return aptDate.getTime() === yesterday.getTime()
@@ -399,26 +399,26 @@ export class AssistantsService {
     }))
   }
 
-  // Get appointments for assistant's clinic
+  // Get appointments for assistant's doctor
   async getAppointments(assistantId: string, status?: string, filterType?: 'upcoming' | 'past' | 'all') {
     const assistant = await this.findOne(assistantId, false) // Get raw entity
     if (!assistant) {
       throw new NotFoundException(`Assistant with ID ${assistantId} not found`)
     }
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    let clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    let doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
     // Filter by status if provided
     if (status) {
-      clinicAppointments = clinicAppointments.filter((apt) => apt.status === status)
+      doctorAppointments = doctorAppointments.filter((apt) => apt.status === status)
     }
 
     // Format appointments
-    const formattedAppointments = clinicAppointments.map((apt) => ({
+    const formattedAppointments = doctorAppointments.map((apt) => ({
       id: apt.id,
       patientName: apt.patient?.fullName || 'Unknown',
       date: new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -485,8 +485,8 @@ export class AssistantsService {
     }
 
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
     const today = new Date()
@@ -494,13 +494,13 @@ export class AssistantsService {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const todayAppointments = clinicAppointments.filter((apt) => {
+    const todayAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       aptDate.setHours(0, 0, 0, 0)
       return aptDate.getTime() === today.getTime()
     })
 
-    const upcomingAppointments = clinicAppointments.filter((apt) => {
+    const upcomingAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= today && (apt.status === 'confirmed' || apt.status === 'pending')
     })
@@ -510,11 +510,11 @@ export class AssistantsService {
     // Calculate week change
     const weekAgo = new Date(today)
     weekAgo.setDate(weekAgo.getDate() - 7)
-    const lastWeekAppointments = clinicAppointments.filter((apt) => {
+    const lastWeekAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= weekAgo && aptDate < today
     })
-    const thisWeekAppointments = clinicAppointments.filter((apt) => {
+    const thisWeekAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= today && aptDate < tomorrow
     })
@@ -530,21 +530,21 @@ export class AssistantsService {
     }
   }
 
-  // Get patients for assistant's clinic
+  // Get patients for assistant's doctor
   async getPatients(assistantId: string, search?: string, page: number = 1, limit: number = 10) {
     const assistant = await this.findOne(assistantId, false) // Get raw entity
     if (!assistant) {
       throw new NotFoundException(`Assistant with ID ${assistantId} not found`)
     }
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
     // Get unique patient IDs from appointments
-    const patientIds = [...new Set(clinicAppointments.map((apt) => apt.patientId))]
+    const patientIds = [...new Set(doctorAppointments.map((apt) => apt.patientId))]
 
     // Get all patients
     const allPatients = await this.usersRepository.find({
@@ -570,7 +570,7 @@ export class AssistantsService {
     // Get last appointment and diagnosis for each patient
     const patientsWithDetails = await Promise.all(
       patients.map(async (patient) => {
-        const patientAppointments = clinicAppointments
+        const patientAppointments = doctorAppointments
           .filter((apt) => apt.patientId === patient.id)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -669,15 +669,15 @@ export class AssistantsService {
       throw new NotFoundException(`Patient with ID ${patientId} not found`)
     }
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId && apt.patientId === patientId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId && apt.patientId === patientId)
       : []
 
     // Get patient history
     const [appointments, medicalRecords, labResults, prescriptions] = await Promise.all([
-      Promise.resolve(clinicAppointments),
+      Promise.resolve(doctorAppointments),
       this.medicalRecordsService.findByPatient(patientId),
       this.labResultsService.findByPatient(patientId),
       this.prescriptionsService.findByPatient(patientId),
@@ -766,16 +766,16 @@ export class AssistantsService {
     }
 
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
-    const patientIds = [...new Set(clinicAppointments.map((apt) => apt.patientId))]
+    const patientIds = [...new Set(doctorAppointments.map((apt) => apt.patientId))]
     const totalPatients = patientIds.length
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const todayAppointments = clinicAppointments.filter((apt) => {
+    const todayAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       aptDate.setHours(0, 0, 0, 0)
       return aptDate.getTime() === today.getTime()
@@ -784,7 +784,7 @@ export class AssistantsService {
     // Calculate month change
     const lastMonth = new Date(today)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
-    const lastMonthAppointments = clinicAppointments.filter((apt) => {
+    const lastMonthAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= lastMonth && aptDate < today
     })
@@ -806,10 +806,10 @@ export class AssistantsService {
       throw new NotFoundException(`Assistant with ID ${assistantId} not found`)
     }
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    let clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    let doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
     // Filter by date range
@@ -818,7 +818,7 @@ export class AssistantsService {
     const end = new Date(endDate)
     end.setHours(23, 59, 59, 999)
 
-    const filteredAppointments = clinicAppointments.filter((apt) => {
+    const filteredAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= start && aptDate <= end
     })
@@ -858,13 +858,13 @@ export class AssistantsService {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    const clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    const doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
-    const todayAppointments = clinicAppointments
+    const todayAppointments = doctorAppointments
       .filter((apt) => {
         const aptDate = new Date(apt.date)
         aptDate.setHours(0, 0, 0, 0)
@@ -904,14 +904,14 @@ export class AssistantsService {
     const end = endDate ? new Date(endDate) : new Date()
     end.setHours(23, 59, 59, 999)
 
-    // Get all appointments for the assistant's clinic
+    // Get all appointments for the assistant's doctor
     const allAppointments = await this.appointmentsService.findAll()
-    let clinicAppointments = assistant.clinicId
-      ? allAppointments.filter((apt) => apt.clinicId === assistant.clinicId)
+    let doctorAppointments = assistant.doctorId
+      ? allAppointments.filter((apt) => apt.doctorId === assistant.doctorId)
       : []
 
     // Filter by date range
-    const filteredAppointments = clinicAppointments.filter((apt) => {
+    const filteredAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= start && aptDate <= end
     })
@@ -963,7 +963,7 @@ export class AssistantsService {
     previousEnd.setDate(previousEnd.getDate() - 1)
     previousEnd.setHours(23, 59, 59, 999)
 
-    const previousAppointments = clinicAppointments.filter((apt) => {
+    const previousAppointments = doctorAppointments.filter((apt) => {
       const aptDate = new Date(apt.date)
       return aptDate >= previousStart && aptDate <= previousEnd
     })

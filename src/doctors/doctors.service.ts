@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between } from 'typeorm'
 import { User } from '../users/entities/user.entity'
@@ -14,6 +14,9 @@ import { CreateAppointmentSlotDto, RecurrenceType } from './dto/create-appointme
 import { AppointmentStatus, AppointmentType } from '../appointments/entities/appointment.entity'
 import { PrescriptionStatus } from '../prescriptions/entities/prescription.entity'
 import { AppointmentSlot, SlotStatus } from '../appointments/entities/appointment-slot.entity'
+import { CreateAssistantDto } from '../assistants/dto/create-assistant.dto'
+import { UpdateAssistantDto } from '../assistants/dto/update-assistant.dto'
+import * as bcrypt from 'bcryptjs'
 
 @Injectable()
 export class DoctorsService {
@@ -669,6 +672,148 @@ export class DoctorsService {
       doctorId,
       status: PrescriptionStatus.ACTIVE,
     })
+  }
+
+  // Assistant Management Methods
+  async getAssistants(doctorId: string) {
+    const assistants = await this.usersRepository.find({
+      where: { 
+        role: UserRole.ASSISTANT,
+        doctorId: doctorId,
+      },
+      select: ['id', 'email', 'phoneNumber', 'fullName', 'avatar', 'permissions', 'isVerified', 'createdAt', 'updatedAt'],
+      relations: ['clinic'],
+      order: { createdAt: 'DESC' },
+    })
+
+    return assistants.map((assistant) => ({
+      id: assistant.id,
+      name: assistant.fullName,
+      email: assistant.email,
+      phoneNumber: assistant.phoneNumber,
+      avatar: assistant.avatar,
+      isActive: assistant.isVerified,
+      clinic: assistant.clinic,
+      permissions: assistant.permissions,
+      createdAt: assistant.createdAt,
+      updatedAt: assistant.updatedAt,
+    }))
+  }
+
+  async createAssistant(doctorId: string, createAssistantDto: CreateAssistantDto) {
+    // Check if phone number or email already exists
+    const existingUser = await this.usersRepository.findOne({
+      where: [
+        { phoneNumber: createAssistantDto.phoneNumber },
+        { email: createAssistantDto.email },
+      ],
+    })
+
+    if (existingUser) {
+      throw new BadRequestException('Phone number or email already exists')
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(createAssistantDto.password, 10)
+
+    // Create assistant with doctorId
+    const assistant = this.usersRepository.create({
+      ...createAssistantDto,
+      password: hashedPassword,
+      role: UserRole.ASSISTANT,
+      doctorId: doctorId,
+      isVerified: true, // Auto-verify assistants created by doctor
+    })
+
+    const saved = await this.usersRepository.save(assistant)
+
+    return {
+      id: saved.id,
+      name: saved.fullName,
+      email: saved.email,
+      phoneNumber: saved.phoneNumber,
+      avatar: saved.avatar,
+      isActive: saved.isVerified,
+      clinic: saved.clinic,
+      permissions: saved.permissions,
+      createdAt: saved.createdAt,
+    }
+  }
+
+  async updateAssistant(doctorId: string, assistantId: string, updateAssistantDto: UpdateAssistantDto) {
+    // Verify assistant belongs to this doctor
+    const assistant = await this.usersRepository.findOne({
+      where: { 
+        id: assistantId,
+        role: UserRole.ASSISTANT,
+        doctorId: doctorId,
+      },
+    })
+
+    if (!assistant) {
+      throw new NotFoundException('Assistant not found or does not belong to this doctor')
+    }
+
+    // If password is being updated, hash it
+    if (updateAssistantDto.password) {
+      updateAssistantDto.password = await bcrypt.hash(updateAssistantDto.password, 10)
+    }
+
+    Object.assign(assistant, updateAssistantDto)
+    const saved = await this.usersRepository.save(assistant)
+
+    return {
+      id: saved.id,
+      name: saved.fullName,
+      email: saved.email,
+      phoneNumber: saved.phoneNumber,
+      avatar: saved.avatar,
+      isActive: saved.isVerified,
+      clinic: saved.clinic,
+      permissions: saved.permissions,
+      updatedAt: saved.updatedAt,
+    }
+  }
+
+  async toggleAssistantStatus(doctorId: string, assistantId: string) {
+    // Verify assistant belongs to this doctor
+    const assistant = await this.usersRepository.findOne({
+      where: { 
+        id: assistantId,
+        role: UserRole.ASSISTANT,
+        doctorId: doctorId,
+      },
+    })
+
+    if (!assistant) {
+      throw new NotFoundException('Assistant not found or does not belong to this doctor')
+    }
+
+    assistant.isVerified = !assistant.isVerified
+    const saved = await this.usersRepository.save(assistant)
+
+    return {
+      id: saved.id,
+      isActive: saved.isVerified,
+    }
+  }
+
+  async deleteAssistant(doctorId: string, assistantId: string) {
+    // Verify assistant belongs to this doctor
+    const assistant = await this.usersRepository.findOne({
+      where: { 
+        id: assistantId,
+        role: UserRole.ASSISTANT,
+        doctorId: doctorId,
+      },
+    })
+
+    if (!assistant) {
+      throw new NotFoundException('Assistant not found or does not belong to this doctor')
+    }
+
+    await this.usersRepository.remove(assistant)
+    return { message: 'Assistant deleted successfully' }
   }
 }
 

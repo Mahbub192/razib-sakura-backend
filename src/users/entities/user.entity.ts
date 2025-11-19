@@ -63,6 +63,9 @@ export class User extends BaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   permissions: string[]
 
+  @Column({ nullable: true })
+  doctorId: string // Doctor who created/manages this assistant
+
   // Notification preferences
   @Column({ type: 'jsonb', nullable: true })
   notificationPreferences: {

@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Param,
   Body,
   Query,
@@ -13,6 +14,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { DoctorsService } from './doctors.service'
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto'
 import { CreateAppointmentSlotDto } from './dto/create-appointment-slot.dto'
+import { CreateAssistantDto } from '../assistants/dto/create-assistant.dto'
+import { UpdateAssistantDto } from '../assistants/dto/update-assistant.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AppointmentStatus } from '../appointments/entities/appointment.entity'
 
@@ -236,6 +239,46 @@ export class DoctorsController {
   @ApiResponse({ status: 200, description: 'Clinic information updated' })
   updateClinicInfo(@Request() req, @Body() clinicData: any) {
     return this.doctorsService.updateClinicInfo(req.user.id, clinicData)
+  }
+
+  // Assistant Management Endpoints
+  @Get(':id/assistants')
+  @ApiOperation({ summary: 'Get all assistants for a doctor' })
+  @ApiResponse({ status: 200, description: 'List of assistants' })
+  getAssistants(@Param('id') id: string) {
+    return this.doctorsService.getAssistants(id)
+  }
+
+  @Post(':id/assistants')
+  @ApiOperation({ summary: 'Create a new assistant for a doctor' })
+  @ApiResponse({ status: 201, description: 'Assistant created successfully' })
+  createAssistant(@Param('id') id: string, @Body() createAssistantDto: CreateAssistantDto) {
+    return this.doctorsService.createAssistant(id, createAssistantDto)
+  }
+
+  @Patch(':id/assistants/:assistantId')
+  @ApiOperation({ summary: 'Update an assistant' })
+  @ApiResponse({ status: 200, description: 'Assistant updated successfully' })
+  updateAssistant(
+    @Param('id') id: string,
+    @Param('assistantId') assistantId: string,
+    @Body() updateAssistantDto: UpdateAssistantDto,
+  ) {
+    return this.doctorsService.updateAssistant(id, assistantId, updateAssistantDto)
+  }
+
+  @Patch(':id/assistants/:assistantId/toggle-status')
+  @ApiOperation({ summary: 'Toggle assistant active/inactive status' })
+  @ApiResponse({ status: 200, description: 'Assistant status updated' })
+  toggleAssistantStatus(@Param('id') id: string, @Param('assistantId') assistantId: string) {
+    return this.doctorsService.toggleAssistantStatus(id, assistantId)
+  }
+
+  @Delete(':id/assistants/:assistantId')
+  @ApiOperation({ summary: 'Delete an assistant' })
+  @ApiResponse({ status: 200, description: 'Assistant deleted successfully' })
+  deleteAssistant(@Param('id') id: string, @Param('assistantId') assistantId: string) {
+    return this.doctorsService.deleteAssistant(id, assistantId)
   }
 }
 

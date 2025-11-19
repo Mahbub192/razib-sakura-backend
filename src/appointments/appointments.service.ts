@@ -16,11 +16,14 @@ export class AppointmentsService {
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment> {
+    // Convert date string to Date object
+    const appointmentDate = new Date(createAppointmentDto.date)
+    
     // Find available slot
     const slot = await this.appointmentSlotRepository.findOne({
       where: {
         doctorId: createAppointmentDto.doctorId,
-        date: createAppointmentDto.date,
+        date: appointmentDate,
         time: createAppointmentDto.time,
         status: SlotStatus.AVAILABLE,
       },
@@ -30,8 +33,11 @@ export class AppointmentsService {
       throw new BadRequestException('No available slot found for the selected date and time')
     }
 
-    // Create appointment
-    const appointment = this.appointmentsRepository.create(createAppointmentDto)
+    // Create appointment with converted date
+    const appointment = this.appointmentsRepository.create({
+      ...createAppointmentDto,
+      date: appointmentDate,
+    })
     const savedAppointment = await this.appointmentsRepository.save(appointment)
 
     // Mark slot as booked
