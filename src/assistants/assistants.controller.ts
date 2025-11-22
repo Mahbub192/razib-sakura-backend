@@ -75,6 +75,14 @@ export class AssistantsController {
     return this.assistantsService.getAppointmentStatistics(req.user.id)
   }
 
+  @Post('appointments')
+  @ApiOperation({ summary: 'Book appointment for a patient (Assistant)' })
+  @ApiResponse({ status: 201, description: 'Appointment booked successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - slot not available or patient already has appointment' })
+  bookAppointment(@Request() req, @Body() appointmentData: any) {
+    return this.assistantsService.bookAppointment(req.user.id, appointmentData)
+  }
+
   @Get('patients')
   @ApiOperation({ summary: 'Get assistant patients' })
   @ApiQuery({ name: 'search', required: false, type: String })

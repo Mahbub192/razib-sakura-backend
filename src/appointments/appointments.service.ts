@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { Appointment } from './entities/appointment.entity'
+import { Repository, In } from 'typeorm'
+import { Appointment, AppointmentStatus } from './entities/appointment.entity'
 import { AppointmentSlot, SlotStatus } from './entities/appointment-slot.entity'
 import { CreateAppointmentDto } from './dto/create-appointment.dto'
 import { UpdateAppointmentDto } from './dto/update-appointment.dto'
@@ -18,6 +18,22 @@ export class AppointmentsService {
   async create(createAppointmentDto: CreateAppointmentDto): Promise<Appointment> {
     // Convert date string to Date object
     const appointmentDate = new Date(createAppointmentDto.date)
+    
+    // Check if patient already has an appointment on this date
+    const existingAppointment = await this.appointmentsRepository.findOne({
+      where: {
+        patientId: createAppointmentDto.patientId,
+        date: appointmentDate,
+        status: In([
+          AppointmentStatus.PENDING,
+          AppointmentStatus.CONFIRMED,
+        ]),
+      },
+    })
+
+    if (existingAppointment) {
+      throw new BadRequestException('Patient already has an appointment scheduled for this date. Only one appointment per day is allowed.')
+    }
     
     // Find available slot
     const slot = await this.appointmentSlotRepository.findOne({

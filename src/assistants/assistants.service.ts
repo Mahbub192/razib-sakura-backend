@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between, In } from 'typeorm'
 import { User } from '../users/entities/user.entity'
@@ -1124,6 +1124,33 @@ export class AssistantsService {
     } catch {
       return null
     }
+  }
+
+  // Book appointment for a patient (Assistant can book for any patient)
+  async bookAppointment(assistantId: string, appointmentData: any) {
+    const assistant = await this.findOne(assistantId, false)
+    if (!assistant) {
+      throw new NotFoundException(`Assistant with ID ${assistantId} not found`)
+    }
+
+    // Get doctor ID from assistant (assistants are associated with a doctor)
+    const doctorId = assistant.doctorId || appointmentData.doctorId
+    if (!doctorId) {
+      throw new BadRequestException('Doctor ID is required. Assistant must be associated with a doctor.')
+    }
+
+    // Create appointment using appointments service
+    // The appointments service will handle:
+    // 1. Checking if patient already has appointment on that date
+    // 2. Finding available slot
+    // 3. Creating appointment and marking slot as booked
+    const appointment = await this.appointmentsService.create({
+      ...appointmentData,
+      doctorId,
+      status: AppointmentStatus.PENDING, // Default status for assistant-booked appointments
+    })
+
+    return appointment
   }
 }
 
