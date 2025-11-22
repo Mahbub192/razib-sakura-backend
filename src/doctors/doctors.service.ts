@@ -614,7 +614,7 @@ export class DoctorsService {
     const queryBuilder = this.appointmentSlotRepository
       .createQueryBuilder('slot')
       .where('slot.doctorId = :doctorId', { doctorId })
-      .andWhere('slot.status = :status', { status: SlotStatus.AVAILABLE })
+      // Remove the status filter to get ALL slots (both available and booked)
 
     if (startDate && endDate) {
       queryBuilder.andWhere('slot.date >= :startDate', { startDate })
@@ -640,13 +640,16 @@ export class DoctorsService {
       })
     })
 
-    // Format response
-    return Object.entries(slotsByDate).map(([date, slotList]) => ({
-      date,
-      slots: slotList,
-      totalSlots: slotList.length,
-      availableSlots: slotList.length,
-    }))
+    // Format response - count available slots separately
+    return Object.entries(slotsByDate).map(([date, slotList]) => {
+      const availableCount = slotList.filter((slot) => slot.status === SlotStatus.AVAILABLE).length
+      return {
+        date,
+        slots: slotList,
+        totalSlots: slotList.length,
+        availableSlots: availableCount,
+      }
+    })
   }
 
   async createMedicalRecord(doctorId: string, patientId: string, recordData: any) {
